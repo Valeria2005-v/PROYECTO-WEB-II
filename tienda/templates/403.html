@@ -1,0 +1,9 @@
+{% extends "tienda/base.html" %}
+{% block titulo %}Sin permiso{% endblock %}
+{% block contenido %}
+<h1>Sin permiso</h1>
+<div class="card">
+  <p>Tu rol no puede entrar a esta pantalla.</p>
+  <p><a class="btn" href="{% url 'inicio' %}">Volver al inicio</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+<tr>
+  <td>
+    <select name="inventario" aria-label="Producto">
+      <option value="">— elige un producto —</option>
+      {% for i in inventarios %}
+      <option value="{{ i.pk }}" data-unidades="{{ i.unidades }}" {% if fila.inventario == i.pk %}selected{% endif %}>
+        {{ i.ropa }} · {{ i.color }} · {{ i.unidades }} disp. · ${{ i.ropa.precio }}
+      </option>
+      {% endfor %}
+    </select>
+  </td>
+  <td><input type="number" name="cantidad" min="1" value="{{ fila.cantidad|default:1 }}" aria-label="Cantidad"></td>
+  <td><button type="button" class="btn sec quitar">Quitar</button></td>
+</tr>

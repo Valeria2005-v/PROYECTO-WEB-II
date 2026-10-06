@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.exceptions import FieldDoesNotExist
 from django.db import transaction
@@ -11,14 +12,14 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 
-from .models import Cliente, Color, DetalleVenta, Inventario, Proveedor, Ropa, Venta
+from .constantes import ADMIN, ALMACEN, PUBLICO_GENERAL
+from .models import Cliente, Color, Inventario, Proveedor, Ropa, Venta
+from .permisos import RolRequeridoMixin, roles
 
-# Inventario (Ropa-Color) y DetalleVenta (Venta-Ropa) se capturan dentro de
-# la ventana de Ropa y de Venta, como renglones en línea.
+# Inventario (Ropa-Color) se captura dentro de la ventana de Ropa, como renglones en línea.
 InventarioFormSet = inlineformset_factory(
     Ropa, Inventario, fields=["color", "unidades"], extra=1, can_delete=True)
-DetalleFormSet = inlineformset_factory(
-    Venta, DetalleVenta, fields=["ropa", "cantidad"], extra=1, can_delete=True)
+
 
 # Un solo CRUD genérico configurado por módulo.
 MODULOS = {
@@ -29,35 +30,24 @@ MODULOS = {
         "buscar": ["marca", "modelo", "descripcion", "proveedor__nombre"],
         "select": ["proveedor"], "prefetch": ["inventarios"],
         "formset": InventarioFormSet, "formset_titulo": "Inventario por color",
+        "lectura": [ADMIN, ALMACEN], "escritura": [ADMIN],
     },
     "colores": {
         "model": Color, "titulo": "Colores",
         "campos": ["descripcion"], "columnas": ["descripcion"], "buscar": ["descripcion"],
+        "lectura": [ADMIN], "escritura": [ADMIN],
     },
     "proveedores": {
         "model": Proveedor, "titulo": "Proveedores",
         "campos": ["nombre", "telefono", "correo"],
         "columnas": ["nombre", "telefono", "correo"], "buscar": ["nombre", "correo"],
+        "lectura": [ADMIN], "escritura": [ADMIN],
     },
     "clientes": {
         "model": Cliente, "titulo": "Clientes",
         "campos": ["nombre", "telefono", "correo"],
         "columnas": ["nombre", "telefono", "correo"], "buscar": ["nombre", "correo"],
-    },
-    "usuarios": {
-        "model": User,
-        "titulo": "Usuarios",
-        "campos": ["username", "password"],
-        "columnas": ["username"],
-        "buscar": ["username"],
-    },
-    "ventas": {
-        "model": Venta, "titulo": "Ventas",
-        "campos": ["fecha", "cliente"],
-        "columnas": ["id", "fecha", "cliente", "total"], "buscar": ["cliente__nombre"],
-        "select": ["cliente"],
-        "widgets": {"fecha": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")},
-        "formset": DetalleFormSet, "formset_titulo": "Prendas vendidas",
+        "lectura": [ADMIN], "escritura": [ADMIN],
     },
 }
 
@@ -75,7 +65,13 @@ def valor(obj, nombre):
     return v() if callable(v) else v
 
 
-class ModuloMixin:
+class ModuloMixin(RolRequeridoMixin):
+    escribe = True  # Crear / Editar / Eliminar; Lista lo pone en False
+
+    def get_roles(self):
+        clave = "escritura" if self.escribe else "lectura"
+        return self.cfg.get(clave, [ADMIN])
+
     def dispatch(self, request, *args, **kwargs):
         self.slug = kwargs["slug"]
         self.cfg = MODULOS.get(self.slug)
@@ -95,21 +91,31 @@ class ModuloMixin:
         return ctx
 
 
-class Inicio(TemplateView):
-    template_name = "tienda/inicio.html"
+class Inicio(LoginRequiredMixin, TemplateView):
+    template_name = "inicio.html"
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["resumen"] = [(m["titulo"], m["model"].objects.count(), s) for s, m in MODULOS.items()]
-        ctx["ingresos"] = Venta.objects.aggregate(t=Sum("total"))["t"] or 0
-        ctx["ultimas"] = Venta.objects.select_related("cliente")[:5]
-        ctx["bajo_stock"] = (
-            Inventario.objects.filter(unidades__lte=5).select_related("ropa", "color")[:8])
+        r = roles(self.request)
+        if r["es_admin"]:
+            ctx["resumen"] = [
+                (m["titulo"], m["model"].objects.count(), reverse("lista", args=[s]))
+                for s, m in MODULOS.items()]
+            ctx["resumen"] += [
+                ("Usuarios", User.objects.count(), reverse("usuario_lista")),
+                ("Ventas", Venta.objects.count(), reverse("venta_lista"))]
+            ctx["ingresos"] = Venta.objects.aggregate(t=Sum("total"))["t"] or 0
+        if r["es_admin"] or r["es_cajero"]:
+            ctx["ultimas"] = Venta.objects.select_related("cliente")[:5]
+        if r["es_admin"] or r["es_almacen"]:
+            ctx["bajo_stock"] = (
+                Inventario.objects.filter(unidades__lte=5).select_related("ropa", "color")[:8])
         return ctx
 
 
 class Lista(ModuloMixin, ListView):
-    template_name = "tienda/lista.html"
+    escribe = False
+    template_name = "lista.html"
     paginate_by = 10
 
     def get_queryset(self):
@@ -130,11 +136,12 @@ class Lista(ModuloMixin, ListView):
         ctx["encabezados"] = [etiqueta(modelo, c) for c in columnas]
         ctx["filas"] = [(o, [valor(o, c) for c in columnas]) for o in ctx["object_list"]]
         ctx["q"] = self.request.GET.get("q", "")
+        ctx["publico_general"] = PUBLICO_GENERAL
         return ctx
 
 
 class FormularioMixin(ModuloMixin):
-    template_name = "tienda/form.html"
+    template_name = "form.html"
 
     def get_form_class(self):
         return modelform_factory(
@@ -176,11 +183,22 @@ class Crear(FormularioMixin, CreateView):
     pass
 
 
-class Editar(FormularioMixin, UpdateView):
+class ProtegePublico:
+    """El cliente "Público general" no se puede editar ni eliminar."""
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.slug == "clientes":
+            qs = qs.exclude(nombre=PUBLICO_GENERAL)
+        return qs
+
+
+class Editar(ProtegePublico, FormularioMixin, UpdateView):
     pass
 
-class Eliminar(ModuloMixin, DeleteView):
-    template_name = "tienda/eliminar.html"
+
+class Eliminar(ProtegePublico, ModuloMixin, DeleteView):
+    template_name = "eliminar.html"
 
     def form_valid(self, form):
         try:
@@ -195,7 +213,10 @@ class Eliminar(ModuloMixin, DeleteView):
         return redirect(self.get_success_url())
 
 class InventarioView(ModuloMixin, DetailView):
-    template_name = "tienda/inventario.html"
+    template_name = "inventario.html"
+
+    def get_roles(self):
+        return [ALMACEN]
 
     def get_queryset(self):
         return Ropa.objects.prefetch_related("inventarios__color")

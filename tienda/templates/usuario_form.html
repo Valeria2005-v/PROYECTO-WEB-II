@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block titulo %}Usuarios{% endblock %}
+{% block contenido %}
+<h1>{% if object %}Editar{% else %}Nuevo{% endif %} · Usuario</h1>
+<form method="post" class="card">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  {% for c in form %}
+  <div class="campo">
+    {{ c.label_tag }}{{ c }}
+    {% if c.help_text %}<small>{{ c.help_text }}</small>{% endif %}
+    {{ c.errors }}
+  </div>
+  {% endfor %}
+  <p><button class="btn">Guardar</button> <a class="btn sec" href="{% url 'usuario_lista' %}">Cancelar</a></p>
+</form>
+{% endblock %}

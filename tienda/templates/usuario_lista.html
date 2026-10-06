@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block titulo %}Usuarios{% endblock %}
+{% block contenido %}
+<div class="barra">
+  <h1>Usuarios</h1>
+  <a class="btn" href="{% url 'usuario_nuevo' %}">+ Nuevo</a>
+</div>
+<div class="card tabla">
+  <table>
+    <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Activo</th><th></th></tr></thead>
+    <tbody>
+    {% for u in object_list %}
+      <tr>
+        <td>{{ u.username }}</td>
+        <td>{{ u.first_name|default:"—" }}</td>
+        <td>{% for g in u.groups.all %}{{ g.name }}{% empty %}—{% endfor %}</td>
+        <td>{% if u.is_active %}Sí{% else %}No{% endif %}</td>
+        <td><a href="{% url 'usuario_editar' u.pk %}">Editar</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">Sin registros.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if is_paginated %}
+  <p>
+    {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">← Anterior</a>{% endif %}
+    Página {{ page_obj.number }} de {{ paginator.num_pages }}
+    {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Siguiente →</a>{% endif %}
+  </p>
+  {% endif %}
+</div>
+{% endblock %}

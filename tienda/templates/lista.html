@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block contenido %}
+<div class="barra">
+  <h1>{{ titulo }}</h1>
+  <div>
+    <form method="get">
+      <input name="q" value="{{ q }}" placeholder="Buscar…">
+      <button class="btn sec">Buscar</button>
+    </form>
+    
+    <!-- Botón de alta de catálogos: Solo Administrador -->
+    {% if es_admin and slug != "ventas" and slug != "usuarios" %}
+      <a class="btn" href="{% url 'nuevo' slug %}">+ Nuevo</a>
+    {% endif %}
+
+    {% if es_admin and slug == "usuarios" %}
+      <a class="btn" href="{% url 'usuario_nuevo' %}">+ Nuevo Usuario</a>
+    {% endif %}
+
+    <!-- Botón de Nueva Venta: EXCLUSIVO del Cajero -->
+    {% if es_cajero and slug == "ventas" %}
+      <a class="btn" href="{% url 'venta_nueva' %}">+ Nueva Venta</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card tabla">
+  <table>
+    <thead>
+      <tr>
+        {% for h in encabezados %}<th>{{ h }}</th>{% endfor %}
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for obj, valores in filas %}
+      <tr>
+        {% for v in valores %}<td>{{ v|default_if_none:"—" }}</td>{% endfor %}
+        <td>
+          <!-- Administrador: Editar y Eliminar (Protegiendo 'Público general') -->
+          {% if es_admin %}
+            {% if slug != "clientes" or obj.nombre != publico_general %}
+              {% if slug == "usuarios" %}
+                <a href="{% url 'usuario_editar' obj.pk %}">Editar</a>
+              {% elif slug == "ventas" %}
+                <a href="{% url 'venta_detalle' obj.pk %}">Ver detalle</a>
+              {% else %}
+                <a href="{% url 'editar' slug obj.pk %}">Editar</a> ·
+                <a href="{% url 'eliminar' slug obj.pk %}">Eliminar</a>
+              {% endif %}
+            {% endif %}
+          {% endif %}
+
+          <!-- Almacenista: Actualizar inventario únicamente en Ropa -->
+          {% if slug == "ropa" and es_almacen %}
+            {% if es_admin %} · {% endif %}
+            <a href="{% url 'inventario' slug obj.pk %}">Inventario</a>
+          {% endif %}
+
+          <!-- Cajero: Consultar detalle en Ventas -->
+          {% if slug == "ventas" and es_cajero and not es_admin %}
+            <a href="{% url 'venta_detalle' obj.pk %}">Ver detalle</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="{{ encabezados|length|add:1 }}">Sin registros.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  {% if is_paginated %}
+  <p>
+    {% if page_obj.has_previous %}
+      <a href="?q={{ q|urlencode }}&page={{ page_obj.previous_page_number }}">← Anterior</a>
+    {% endif %}
+    Página {{ page_obj.number }} de {{ paginator.num_pages }}
+    {% if page_obj.has_next %}
+      <a href="?q={{ q|urlencode }}&page={{ page_obj.next_page_number }}">Siguiente →</a>
+    {% endif %}
+  </p>
+  {% endif %}
+</div>
+{% endblock %}

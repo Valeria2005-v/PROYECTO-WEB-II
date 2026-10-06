@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block titulo %}Panel{% endblock %}
+{% block contenido %}
+<div class="barra">
+  <h1>Panel</h1>
+  {% if es_cajero %}<a class="btn" href="{% url 'venta_nueva' %}">+ Nueva venta</a>{% endif %}
+</div>
+
+{% if not es_admin and not es_almacen and not es_cajero %}
+<div class="card"><p>Tu usuario todavía no tiene un rol asignado. Pídele al administrador que te lo asigne.</p></div>
+{% endif %}
+
+{% if es_admin %}
+<div class="grid">
+  {% for nombre, n, url in resumen %}
+  <a class="card" href="{{ url }}" style="text-decoration:none;color:inherit">
+    <div class="num">{{ n }}</div>{{ nombre }}
+  </a>
+  {% endfor %}
+  <div class="card">
+    <div class="num" title="${{ ingresos }}">${{ ingresos|floatformat:0 }}</div>
+    Ingresos
+  </div>
+</div>
+{% endif %}
+
+{% if es_admin or es_cajero %}
+<div class="card tabla">
+  <h2>Últimas ventas</h2>
+  <table>
+    <tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Total</th><th></th></tr>
+    {% for v in ultimas %}
+    <tr>
+      <td>{{ v.pk }}</td><td>{{ v.fecha|date:"d/m/Y" }}</td><td>{{ v.cliente }}</td><td>${{ v.total }}</td>
+      <td><a href="{% url 'venta_detalle' v.pk %}">Ver detalle</a></td>
+    </tr>
+    {% empty %}<tr><td colspan="5">Aún no hay ventas.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endif %}
+
+{% if es_admin or es_almacen %}
+<div class="card tabla">
+  <h2>Inventario bajo (5 unidades o menos)</h2>
+  <table>
+    <tr><th>Prenda</th><th>Color</th><th>Unidades</th></tr>
+    {% for i in bajo_stock %}
+    <tr><td>{{ i.ropa }}</td><td>{{ i.color }}</td><td>{{ i.unidades }}</td></tr>
+    {% empty %}<tr><td colspan="3">Sin alertas.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endif %}
+{% endblock %}

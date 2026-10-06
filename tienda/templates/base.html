@@ -65,12 +65,38 @@ small{color:#52606d}
 <body>
 <nav>
   <a class="marca" href="{% url 'inicio' %}">Tienda de ropa</a>
-  <a href="{% url 'lista' 'ropa' %}" {% if slug == 'ropa' %}class="on"{% endif %}>Ropa</a>
-  <a href="{% url 'lista' 'colores' %}" {% if slug == 'colores' %}class="on"{% endif %}>Colores</a>
-  <a href="{% url 'lista' 'proveedores' %}" {% if slug == 'proveedores' %}class="on"{% endif %}>Proveedores</a>
-  <a href="{% url 'lista' 'clientes' %}" {% if slug == 'clientes' %}class="on"{% endif %}>Clientes</a>
-  <a href="{% url 'lista' 'usuarios' %}">Usuarios</a>
-  <a href="{% url 'lista' 'ventas' %}" {% if slug == 'ventas' %}class="on"{% endif %}>Ventas</a>
+  {% if user.is_authenticated %}
+    
+    <!-- ROPA: Administrador y Almacenista -->
+    {% if es_admin or es_almacen %}
+      <a href="{% url 'lista' 'ropa' %}" {% if slug == 'ropa' %}class="on"{% endif %}>Ropa</a>
+    {% endif %}
+
+    <!-- CATÁLOGOS EXCLUSIVOS: Administrador -->
+    {% if es_admin %}
+      <a href="{% url 'lista' 'colores' %}" {% if slug == 'colores' %}class="on"{% endif %}>Colores</a>
+      <a href="{% url 'lista' 'proveedores' %}" {% if slug == 'proveedores' %}class="on"{% endif %}>Proveedores</a>
+      <a href="{% url 'lista' 'clientes' %}" {% if slug == 'clientes' %}class="on"{% endif %}>Clientes</a>
+      <a href="{% url 'usuario_lista' %}" {% if slug == 'usuarios' %}class="on"{% endif %}>Usuarios</a>
+    {% endif %}
+
+    <!-- CONSULTAR VENTAS: Administrador y Cajero -->
+    {% if es_admin or es_cajero %}
+      <a href="{% url 'venta_lista' %}" {% if 'venta' in request.resolver_match.url_name %}class="on"{% endif %}>Ventas</a>
+    {% endif %}
+
+    <!-- REGISTRAR VENTA: EXCLUSIVO DEL CAJERO (El Admin NO vende) -->
+    {% if es_cajero %}
+      <a href="{% url 'venta_nueva' %}" {% if request.resolver_match.url_name == 'venta_nueva' %}class="on"{% endif %}>+ Nueva venta</a>
+    {% endif %}
+
+    <span style="margin-left:auto;color:#fff">{{ user.username }}</span>
+    <form method="post" action="{% url 'logout' %}" style="margin:0 0 0 8px">
+      {% csrf_token %}
+      <button class="btn sec">Salir</button>
+    </form>
+
+  {% endif %}
 </nav>
 <main>
 {% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}

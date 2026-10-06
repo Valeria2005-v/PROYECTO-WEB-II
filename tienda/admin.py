@@ -9,8 +9,14 @@ class InventarioInline(admin.TabularInline):
 
 
 class DetalleVentaInline(admin.TabularInline):
+    """Solo lectura: las ventas se registran desde la pantalla de ventas."""
     model = DetalleVenta
-    extra = 1
+    extra = 0
+    can_delete = False
+    readonly_fields = ("inventario", "cantidad", "precio_unitario")
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Ropa)
@@ -23,8 +29,11 @@ class RopaAdmin(admin.ModelAdmin):
 
 @admin.register(Venta)
 class VentaAdmin(admin.ModelAdmin):
-    list_display = ("id", "fecha", "cliente", "total")
+    list_display = ("id", "fecha", "cliente", "total", "usuario")
     inlines = [DetalleVentaInline]
+
+    def has_add_permission(self, request):
+        return False
 
 
 admin.site.register([Proveedor, Color, Cliente])

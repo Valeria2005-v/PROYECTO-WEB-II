@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block titulo %}Nueva venta{% endblock %}
+{% block contenido %}
+<h1>Nueva venta</h1>
+<form method="post" class="card">
+  {% csrf_token %}
+  <div class="campo">
+    <label for="cliente">Cliente</label>
+    <select name="cliente" id="cliente">
+      {% for c in clientes %}
+      <option value="{{ c.pk }}" {% if c.pk == cliente_sel %}selected{% endif %}>{{ c.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="tabla">
+    <table>
+      <thead><tr><th>Producto (prenda · color)</th><th style="width:140px">Cantidad</th><th style="width:100px"></th></tr></thead>
+      <tbody id="filas">
+        {% for f in filas %}{% include "_venta_fila.html" with fila=f %}{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <template id="fila">{% include "_venta_fila.html" with fila=None %}</template>
+
+  <p><button type="button" class="btn sec" id="mas">+ Agregar producto</button></p>
+  <p>
+    <button class="btn">Registrar venta</button>
+    <a class="btn sec" href="{% url 'venta_lista' %}">Cancelar</a>
+  </p>
+</form>
+
+<script>
+const filas = document.getElementById("filas");
+const plantilla = document.getElementById("fila");
+
+// Evita elegir dos veces el mismo producto y limita la cantidad a las existencias.
+// La validación real la hace el servidor al registrar la venta.
+function refrescar() {
+  const elegidos = [...filas.querySelectorAll("select")].map(s => s.value).filter(Boolean);
+  filas.querySelectorAll("select").forEach(s => {
+    [...s.options].forEach(o => {
+      o.disabled = o.value !== "" && o.value !== s.value && elegidos.includes(o.value);
+    });
+    const op = s.selectedOptions[0];
+    const cantidad = s.closest("tr").querySelector("input");
+    cantidad.max = op && op.dataset.unidades ? op.dataset.unidades : "";
+  });
+}
+function agregar() { filas.appendChild(plantilla.content.cloneNode(true)); refrescar(); }
+
+document.getElementById("mas").addEventListener("click", agregar);
+filas.addEventListener("change", refrescar);
+filas.addEventListener("click", e => {
+  if (e.target.classList.contains("quitar")) { e.target.closest("tr").remove(); refrescar(); }
+});
+refrescar();
+</script>
+{% endblock %}

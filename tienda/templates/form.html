@@ -1,4 +1,4 @@
-{% extends "tienda/base.html" %}
+{% extends "base.html" %}
 {% block titulo %}{{ titulo }}{% endblock %}
 {% block contenido %}
 <h1>{% if object %}Editar{% else %}Nuevo{% endif %} · {{ titulo }}</h1>
@@ -18,10 +18,10 @@
   <div class="tabla">
     <table>
       <thead><tr>{% for c in formset.empty_form.visible_fields %}<th>{{ c.label }}</th>{% endfor %}</tr></thead>
-      <tbody id="filas">{% for f in formset %}{% include "tienda/_fila.html" %}{% endfor %}</tbody>
+      <tbody id="filas">{% for f in formset %}{% include "_fila.html" %}{% endfor %}</tbody>
     </table>
   </div>
-  <template id="vacia">{% include "tienda/_fila.html" with f=formset.empty_form %}</template>
+  <template id="vacia">{% include "_fila.html" with f=formset.empty_form %}</template>
   <p><button type="button" class="btn sec" id="mas">+ Agregar renglón</button></p>
   {% endif %}
   <p><button class="btn">Guardar</button> <a class="btn sec" href="{% url 'lista' slug %}">Cancelar</a></p>

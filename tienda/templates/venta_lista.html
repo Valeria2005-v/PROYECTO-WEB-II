@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block titulo %}Ventas{% endblock %}
+{% block contenido %}
+<div class="barra">
+  <h1>Ventas</h1>
+  <form method="get">
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar por cliente">
+    <button class="btn sec">Buscar</button>
+  </form>
+  {% if es_cajero %}<a class="btn" href="{% url 'venta_nueva' %}">+ Nueva venta</a>{% endif %}
+</div>
+<div class="card tabla">
+  <table>
+    <thead><tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Cajero</th><th>Total</th><th></th></tr></thead>
+    <tbody>
+    {% for v in object_list %}
+      <tr>
+        <td>{{ v.pk }}</td>
+        <td>{{ v.fecha|date:"d/m/Y" }}</td>
+        <td>{{ v.cliente }}</td>
+        <td>{{ v.usuario|default:"—" }}</td>
+        <td>${{ v.total }}</td>
+        <td><a href="{% url 'venta_detalle' v.pk %}">Ver detalle</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">Sin ventas registradas.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if is_paginated %}
+  <p>
+    {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}">← Anterior</a>{% endif %}
+    Página {{ page_obj.number }} de {{ paginator.num_pages }}
+    {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}">Siguiente →</a>{% endif %}
+  </p>
+  {% endif %}
+</div>
+{% endblock %}

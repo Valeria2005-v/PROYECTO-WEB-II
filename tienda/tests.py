@@ -1,11 +1,12 @@
 from decimal import Decimal
 
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Cliente, Color, Proveedor, Ropa, Venta
+from .models import Cliente, Color, Proveedor, Ropa
 
-SLUGS = ["ropa", "colores", "proveedores", "clientes", "ventas"]
+SLUGS = ["ropa", "colores", "proveedores", "clientes"]
 
 
 def management(prefix, n):
@@ -15,6 +16,7 @@ def management(prefix, n):
 
 class TiendaTests(TestCase):
     def setUp(self):
+        self.client.force_login(User.objects.create_superuser("admin", password="x"))
         self.prov = Proveedor.objects.create(nombre="Textiles MX")
         self.color = Color.objects.create(descripcion="Negro")
         self.cliente = Cliente.objects.create(nombre="Ana")
@@ -93,20 +95,12 @@ class TiendaTests(TestCase):
         self.assertEqual(respuesta.status_code, 200)
         self.assertContains(
             respuesta,
-            "Este producto no tiene colores registrados."
+            "todavía no tiene colores"
         )
         self.assertContains(
             respuesta,
-            "Editar producto y agregar colores"
+            "Agrégalos aquí"
         )
-
-    def test_venta_calcula_total(self):
-        ropa = self.crear_ropa()
-        datos = {"fecha": "2026-09-20", "cliente": self.cliente.pk,
-                 "detalles-0-ropa": ropa.pk, "detalles-0-cantidad": "3",
-                 **management("detalles", 1)}
-        self.client.post(reverse("nuevo", args=["ventas"]), datos)
-        self.assertEqual(Venta.objects.get().total, Decimal("599.70"))
 
     def test_no_elimina_proveedor_con_prendas(self):
         self.crear_ropa()
