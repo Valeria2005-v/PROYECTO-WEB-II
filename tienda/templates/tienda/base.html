@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}Tienda de ropa{% endblock %}</title>
+<style>
+:root{--c:#0f766e;--bg:#f4f6f8;--t:#1f2933;--b:#d9e0e6}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--t)}
+nav{background:var(--c);display:flex;flex-wrap:wrap;padding:0 16px;align-items:center}
+nav a{color:#fff;text-decoration:none;padding:14px 12px}
+nav a:hover,nav a.on{background:rgba(0,0,0,.22)}
+nav .marca{font-weight:700;margin-right:12px}
+main{max-width:1000px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border:1px solid var(--b);border-radius:10px;padding:20px;margin-bottom:20px}
+h1{margin:0 0 16px;font-size:1.6rem} h2{font-size:1.1rem}
+.tabla{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--b)}
+th{font-size:.8rem;text-transform:uppercase;color:#52606d}
+input,select,textarea{width:100%;padding:8px;border:1px solid var(--b);border-radius:6px;font:inherit}
+input[type=checkbox]{width:auto}
+.btn{display:inline-block;background:var(--c);color:#fff;border:0;border-radius:6px;padding:8px 14px;text-decoration:none;cursor:pointer;font:inherit}
+.btn.sec{background:#fff;color:var(--t);border:1px solid var(--b)}
+.btn.rojo{background:#b91c1c}
+.barra{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.barra h1{margin:0}
+.barra form{display:inline-flex;gap:8px}
+.campo{margin-bottom:14px}
+.campo label{display:block;font-weight:600;margin-bottom:4px}
+.errorlist{color:#b91c1c;list-style:none;padding:0;margin:4px 0 0;font-size:.9rem}
+small{color:#52606d}
+.msg{padding:10px 14px;border-radius:8px;margin-bottom:12px;background:#d1fae5}
+.msg.error{background:#fee2e2}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Aumentamos un poco el mínimo a 180px */
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.grid .card {
+  margin: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; /* Evita que cualquier contenido interno sobresalga */
+  padding: 16px;
+}
+
+.num {
+  font-size: clamp(1.2rem, 2.5vw, 1.8rem); /* Tamaño dinámico que se reduce si el número es largo */
+  font-weight: 700;
+  color: var(--c);
+  width: 100%;
+  word-break: break-all; /* Si el número es gigante, permite que baje de línea de forma segura */
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+</style>
+</head>
+<body>
+<nav>
+  <a class="marca" href="{% url 'inicio' %}">Tienda de ropa</a>
+  <a href="{% url 'lista' 'ropa' %}" {% if slug == 'ropa' %}class="on"{% endif %}>Ropa</a>
+  <a href="{% url 'lista' 'colores' %}" {% if slug == 'colores' %}class="on"{% endif %}>Colores</a>
+  <a href="{% url 'lista' 'proveedores' %}" {% if slug == 'proveedores' %}class="on"{% endif %}>Proveedores</a>
+  <a href="{% url 'lista' 'clientes' %}" {% if slug == 'clientes' %}class="on"{% endif %}>Clientes</a>
+  <a href="{% url 'lista' 'usuarios' %}">Usuarios</a>
+  <a href="{% url 'lista' 'ventas' %}" {% if slug == 'ventas' %}class="on"{% endif %}>Ventas</a>
+</nav>
+<main>
+{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}
+{% block contenido %}{% endblock %}
+</main>
+</body>
+</html>

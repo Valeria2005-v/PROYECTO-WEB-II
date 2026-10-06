@@ -1,0 +1,1 @@
+<tr>{% for c in f.visible_fields %}<td>{% if forloop.first %}{% for h in f.hidden_fields %}{{ h }}{% endfor %}{% endif %}{{ c }}{{ c.errors }}</td>{% endfor %}</tr>

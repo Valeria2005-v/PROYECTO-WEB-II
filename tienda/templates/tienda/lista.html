@@ -1,0 +1,41 @@
+{% extends "tienda/base.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block contenido %}
+<div class="barra">
+  <h1>{{ titulo }}</h1>
+  <div>
+    <form method="get"><input name="q" value="{{ q }}" placeholder="Buscar…"><button class="btn sec">Buscar</button></form>
+    <a class="btn" href="{% url 'nuevo' slug %}">+ Nuevo</a>
+  </div>
+</div>
+<div class="card tabla">
+  <table>
+    <thead><tr>{% for h in encabezados %}<th>{{ h }}</th>{% endfor %}<th></th></tr></thead>
+    <tbody>
+    {% for obj, valores in filas %}
+      <tr>
+        {% for v in valores %}<td>{{ v|default_if_none:"—" }}</td>{% endfor %}
+        <td>
+            <a href="{% url 'editar' slug obj.pk %}">Editar</a> ·
+            <a href="{% url 'eliminar' slug obj.pk %}">Eliminar</a>
+
+            {% if slug == "ropa" %}
+                ·
+                <a href="{% url 'inventario' slug obj.pk %}">Inventario</a>
+            {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="{{ encabezados|length|add:1 }}">Sin registros.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if is_paginated %}
+  <p>
+    {% if page_obj.has_previous %}<a href="?q={{ q|urlencode }}&page={{ page_obj.previous_page_number }}">← Anterior</a>{% endif %}
+    Página {{ page_obj.number }} de {{ paginator.num_pages }}
+    {% if page_obj.has_next %}<a href="?q={{ q|urlencode }}&page={{ page_obj.next_page_number }}">Siguiente →</a>{% endif %}
+  </p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,5 @@
+CREATE DATABASE tienda_ropa CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'root'@'localhost' IDENTIFIED BY 'root';
+GRANT ALL PRIVILEGES ON tienda_ropa.* TO 'root'@'localhost';
+GRANT ALL PRIVILEGES ON test_tienda_ropa.* TO 'root'@'localhost';
+FLUSH PRIVILEGES;

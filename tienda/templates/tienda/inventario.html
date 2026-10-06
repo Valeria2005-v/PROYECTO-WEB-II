@@ -1,0 +1,30 @@
+{% extends "tienda/base.html" %}
+{% block titulo %}Inventario{% endblock %}
+{% block contenido %}
+<h1>Inventario · {{ producto }}</h1>
+<p>Precio: ${{ producto.precio }} · Proveedor: {{ producto.proveedor }}</p>
+<p>Total en existencia (todos los colores): <strong>{{ total_existencias }}</strong></p>
+<form method="post" class="card">
+  {% csrf_token %}
+  {% if inventarios %}
+  <div class="tabla">
+    <table>
+      <thead><tr><th>Color</th><th>Unidades actuales</th></tr></thead>
+      <tbody>
+      {% for inv in inventarios %}
+        <tr>
+          <td>{{ inv.color }}</td>
+          <td><input type="number" min="0" name="unidades_{{ inv.pk }}" value="{{ inv.unidades }}"></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p><button class="btn">Guardar</button> <a class="btn sec" href="{% url 'lista' 'ropa' %}">Cancelar</a></p>
+  {% else %}
+  <p>Esta prenda todavía no tiene colores.
+     <a href="{% url 'editar' 'ropa' producto.pk %}">Agrégalos aquí</a> en "Inventario por color".</p>
+  <p><a class="btn sec" href="{% url 'lista' 'ropa' %}">Regresar</a></p>
+  {% endif %}
+</form>
+{% endblock %}
